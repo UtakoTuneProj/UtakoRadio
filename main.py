@@ -49,7 +49,7 @@ async def next_song():
 def is_playable(mvid):
     tree = {}
 
-    if mvid in played:
+    if mvid in played + queue:
         return False
 
     req = Request('http://ext.nicovideo.jp/api/getthumbinfo/{}'.format(mvid))
