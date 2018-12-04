@@ -41,6 +41,10 @@ async def next_song():
         queue.append(next_id)
         channel = client.get_channel('519408464208855058')
         await client.send_message(channel, "!play https://www.nicovideo.jp/watch/{}".format(next_id))
+        print('queued {}'.format(next_id))
+    else:
+        print('non playable {} was selected'.format(next_id))
+        await next_song()
 
 def is_playable(mvid):
     tree = {}
