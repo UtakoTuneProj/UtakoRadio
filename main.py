@@ -37,16 +37,19 @@ async def next_song():
     pos = '[' + ','.join(['{:.3}'.format( random.random() * 2 - 1 ) for i in range(8)]) + ']'
     req = Request('https://edge.utako-tune.jp/api/vocalosphere/point/?origin={}'.format(pos))
     with urlopen(req) as res:
-        next_id = json.loads(res.read().decode())['results'][0]['id']
+        results = json.loads(res.read().decode())['results']
 
-    if is_playable(next_id):
-        queue.append(next_id)
-        channel = client.get_channel('519408464208855058')
-        await client.send_message(channel, "!play https://www.nicovideo.jp/watch/{}".format(next_id))
-        print('queued {}'.format(next_id))
-    else:
-        print('non playable {} was selected'.format(next_id))
-        await next_song()
+    for result in results:
+        next_id = result['id']
+        if is_playable(next_id):
+            break
+        else:
+            print('non playable {} was selected'.format(next_id))
+
+    queue.append(next_id)
+    channel = client.get_channel('519408464208855058')
+    await client.send_message(channel, "!play https://www.nicovideo.jp/watch/{}".format(next_id))
+    print('queued {}'.format(next_id))
 
 def is_playable(mvid):
     tree = {}
