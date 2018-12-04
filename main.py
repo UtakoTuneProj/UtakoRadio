@@ -29,6 +29,9 @@ async def on_message(message):
         if len(played) > 100:
             del played[0:len(played)-100]
         await next_song()
+    elif message.author == client.user:
+        if message.content.startswith('!autoqueue'):
+            await next_song()
 
 async def next_song():
     global queue
