@@ -1,4 +1,3 @@
-import discord
 import random
 import json
 import time
@@ -6,6 +5,8 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 from xml.etree import ElementTree
 from datetime import datetime as dt
+
+import discord
 
 from secrets import API_SECRET, TAG_BLACKLIST
 
@@ -16,9 +17,7 @@ positions = []
 
 @client.event
 async def on_ready():
-    for _ in range(3):
-        await next_song()
-        time.sleep(20)
+    print('ready')
 
 @client.event
 async def on_message(message):
@@ -29,8 +28,8 @@ async def on_message(message):
         if len(played) > 100:
             del played[0:len(played)-100]
         await next_song()
-    elif message.author == client.user:
-        if message.content.startswith('!autoqueue'):
+    elif message.author != client.user:
+        if message.content.startswith('!autoqueue') and message.author.top_role.name == 'admin':
             await next_song()
 
 async def next_song():
