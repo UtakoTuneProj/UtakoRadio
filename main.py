@@ -24,7 +24,8 @@ async def on_message(message):
     global played
     global queue
     if message.author == client.user and message.content.startswith("Now playing in"):
-        played += [queue.pop(0)]
+        if queue:
+            played += [queue.pop(0)]
         if len(played) > 100:
             del played[0:len(played)-100]
         await next_song()
