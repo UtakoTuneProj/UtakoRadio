@@ -26,6 +26,8 @@ async def on_ready():
 async def on_message(message):
     global played
     global queue
+    global positions
+    channel = message.channel
     if message.author == client.user and message.content.startswith("Now playing in"):
         if queue:
             played += [queue.pop(0)]
@@ -35,6 +37,17 @@ async def on_message(message):
     elif message.author != client.user:
         if message.content.startswith('!autoqueue') and message.author.top_role.name == 'admin':
             await next_song()
+        if message.content.startswith('!resetposition') and message.author.top_role.name == 'admin':
+            cmds = message.content.split()
+            next_id = cmds[1] if len(cmds) > 1 else None
+
+            tmp = positions
+            positions = []
+            try:
+                await next_song(next_id)
+            except ValueError:
+                await client.send_message(channel, "specified id {} is inivalid".format(next_id))
+                positions = tmp
 
 def search_next_song():
     pos = get_nextpos()
