@@ -11,4 +11,9 @@ TAG_BLACKLIST = {
     '演奏してみた',
     '日刊VOCALOIDランキング',
     '日刊トップテン！VOCALOID＆something',
+    'VOCALOIDメドレー',
 }
+
+POSITION_STEP = 0.15
+
+VERSION = 0

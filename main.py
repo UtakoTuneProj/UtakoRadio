@@ -7,13 +7,16 @@ from xml.etree import ElementTree
 from datetime import datetime as dt
 
 import discord
+import numpy as np
+from numpy import linalg
 
-from secrets import API_SECRET, TAG_BLACKLIST
+from secrets import API_SECRET, TAG_BLACKLIST, POSITION_STEP, VERSION
 
 client = discord.Client()
 played = []
 queue = []
 positions = []
+decode_nparray = lambda p: '[' + ','.join(map(lambda x: '{:.3}'.format(x), p)) + ']'
 
 @client.event
 async def on_ready():
@@ -33,11 +36,13 @@ async def on_message(message):
         if message.content.startswith('!autoqueue') and message.author.top_role.name == 'admin':
             await next_song()
 
-async def next_song():
-    global queue
+def search_next_song():
     pos = get_nextpos()
-    print(pos)
-    req = Request('https://edge.utako-tune.jp/api/vocalosphere/point/?origin={}'.format(pos))
+    pos_url = decode_nparray(pos)
+    req = Request('https://edge.utako-tune.jp/api/vocalosphere/point/?origin={p}&version={v}'.format(**{
+        'p': pos_url,
+        'v': VERSION,
+    }))
     with urlopen(req) as res:
         results = json.loads(res.read().decode())['results']
 
@@ -48,7 +53,26 @@ async def next_song():
         else:
             print('non playable {} was selected'.format(next_id))
 
+    return next_id
+
+async def next_song(next_id=None):
+    global queue
+    global positions
+
+    if not next_id:
+        next_id = search_next_song()
+
+    try:
+        movie_pos = get_moviepos(next_id)
+    except HTTPError:
+        raise ValueError('next_id {} is invalid'.format(next_id))
+    except ValueError:
+        raise ValueError('next_id {} is invalid'.format(next_id))
+
     queue.append(next_id)
+    positions.append(movie_pos)
+    movie_pos_url = decode_nparray(movie_pos)
+
     channel = client.get_channel('519408464208855058')
     await client.send_message(channel, "!play https://www.nicovideo.jp/watch/{}".format(next_id))
     print('queued {}'.format(next_id))
@@ -56,7 +80,33 @@ async def next_song():
 def get_nextpos():
     global positions
     if not positions:
-        return '[' + ','.join(['{:.3}'.format( random.random() * 2 - 1 ) for i in range(8)]) + ']'
+        return np.array([random.random() * 2 - 1 for i in range(8)])
+
+    if len(positions) == 1:
+        vec = np.array([random.random() * 2 - 1 for i in range(8)])
+    else:
+        vec = positions[-1] - positions[-2]
+        del position[0]
+
+    vec = vec / linalg.norm(vec)
+    return positions[-1] + POSITION_STEP * vec
+
+def get_moviepos(mvid):
+    req = Request('https://edge.utako-tune.jp/api/movie/{}'.format(mvid))
+    with urlopen(req) as res:
+        results = json.loads(res.read().decode())
+
+    for songindex in results['songindex_set']:
+        if songindex['version'] == VERSION:
+            break
+    else:
+        raise ValueError('valid index not found')
+
+    poslist = []
+    for i in range(8):
+        poslist.append(songindex['value{}'.format(i)])
+
+    return np.array(poslist)
 
 def is_playable(mvid):
     tree = {}
