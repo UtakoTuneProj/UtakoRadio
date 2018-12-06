@@ -99,7 +99,7 @@ def get_nextpos():
         vec = np.array([random.random() * 2 - 1 for i in range(8)])
     else:
         vec = positions[-1] - positions[-2]
-        del position[0]
+        del positions[0]
 
     vec = vec / linalg.norm(vec)
     return positions[-1] + POSITION_STEP * vec
